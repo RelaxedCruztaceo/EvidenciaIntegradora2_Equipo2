@@ -1,3 +1,3 @@
-/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2/cmake-build-debug/CMakeFiles/EvidenciaIntegradora_Equipo2.dir
-/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2/cmake-build-debug/CMakeFiles/EvidenciaIntegradora_Equipo2.dir
+/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2/cmake-build-debug/CMakeFiles/rebuild_cache.dir

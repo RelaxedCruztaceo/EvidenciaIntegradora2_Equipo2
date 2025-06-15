@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2/cmake-build-debug"
+			"value" : "/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -479,7 +479,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2/cmake-build-debug/CMakeFiles/pkgRedirects"
+			"value" : "/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2/cmake-build-debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -539,7 +539,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2"
+			"value" : "/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2"
 		},
 		{
 			"name" : "CMAKE_INSTALL_NAME_TOOL",
@@ -1127,7 +1127,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2/cmake-build-debug"
+			"value" : "/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2/cmake-build-debug"
 		},
 		{
 			"name" : "EvidenciaIntegradora_Equipo2_IS_TOP_LEVEL",
@@ -1151,7 +1151,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/cruh/CLionProjects/EvidenciaIntegradora_Equipo2"
+			"value" : "/Users/cruh/Documents/Progra/Repositories/EvidenciaIntegradora2_Equipo2"
 		}
 	],
 	"kind" : "cache",

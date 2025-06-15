@@ -1,3 +1,10 @@
+/*
+Alan Sanmiguel Garay, Juan Diego Susunaga, Adrián Salazar Rodríguez y Manuel Alejandro Cruz
+    15/06/2025
+    Equipo 2 - Análisis y diseño de algoritmos avanzados (Gpo 602)
+    Evidencia Integradora 2
+ */
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -6,6 +13,8 @@
 #include <cmath>
 #include <string>
 #include <sstream>
+
+
 
 // Estructura para representar una arista con peso entre dos nodos
 struct Edge {
@@ -20,7 +29,7 @@ struct Point {
     int x, y;
     Point(int x = 0, int y = 0) : x(x), y(y) {}
     // Calcula la distancia euclidiana entre dos puntos
-    double distance(const Point& other) const {
+    double Distance(const Point& other) const {
         return std::sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     }
 };
@@ -28,7 +37,7 @@ struct Point {
 class NetworkOptimizer {
 private:
     int n; // Número de nodos/colonias
-    std::vector<std::vector<int>> distanceMatrix; // Matriz de distancias
+    std::vector<std::vector<int>> DistanceMatrix; // Matriz de distancias
     std::vector<std::vector<int>> capacityMatrix; // Matriz de capacidades
     std::vector<Point> centrals; // Coordenadas de las centrales
 
@@ -36,22 +45,22 @@ private:
     std::vector<int> parent, rank_;
 
     // Inicializa un conjunto para Union-Find - O(1)
-    void makeSet(int v) {
+    void MakeSet(int v) {
         parent[v] = v;
         rank_[v] = 0;
     }
 
     // Encuentra el representante de un conjunto con compresión de ruta - O(α(n)) (inverse Ackermann)
-    int findSet(int v) {
+    int FindSet(int v) {
         if (v == parent[v])
             return v;
-        return parent[v] = findSet(parent[v]);
+        return parent[v] = FindSet(parent[v]);
     }
 
     // Une dos conjuntos - O(α(n))
-    bool unionSets(int a, int b) {
-        a = findSet(a);
-        b = findSet(b);
+    bool UnionSets(int a, int b) {
+        a = FindSet(a);
+        b = FindSet(b);
         if (a != b) {
             if (rank_[a] < rank_[b])
                 std::swap(a, b);
@@ -64,7 +73,7 @@ private:
     }
 
     // BFS para Ford-Fulkerson - O(n^2)
-    bool bfs(std::vector<std::vector<int>>& graph, int s, int t, std::vector<int>& parent) {
+    bool BreadthFirstSearch(std::vector<std::vector<int>>& graph, int s, int t, std::vector<int>& parent) {
         std::vector<bool> visited(n, false);
         std::queue<int> q;
         q.push(s);
@@ -91,9 +100,9 @@ private:
     }
 
     // TSP con programación dinámica - O(n^2 * 2^n)
-    int tspDP(std::vector<int>& path) {
+    int TravellingSalesmanDynamicProgramming(std::vector<int>& path) {
         if (n > 15) {
-            return tspNearestNeighbor(path);
+            return TravellingSalesmanNearestNeighbor(path);
         }
 
         std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, INT_MAX));
@@ -103,14 +112,16 @@ private:
 
         for (int mask = 0; mask < (1 << n); mask++) {
             for (int u = 0; u < n; u++) {
-                if (!(mask & (1 << u)) || dp[mask][u] == INT_MAX) continue;
+                if (!(mask & (1 << u)) || dp[mask][u] == INT_MAX)
+                    continue;
 
                 for (int v = 0; v < n; v++) {
-                    if (mask & (1 << v) || distanceMatrix[u][v] == 0) continue;
+                    if (mask & (1 << v) || DistanceMatrix[u][v] == 0)
+                        continue;
 
                     int newMask = mask | (1 << v);
-                    if (dp[newMask][v] > dp[mask][u] + distanceMatrix[u][v]) {
-                        dp[newMask][v] = dp[mask][u] + distanceMatrix[u][v];
+                    if (dp[newMask][v] > dp[mask][u] + DistanceMatrix[u][v]) {
+                        dp[newMask][v] = dp[mask][u] + DistanceMatrix[u][v];
                         parent[newMask][v] = u;
                     }
                 }
@@ -123,16 +134,16 @@ private:
         int lastNode = -1;
 
         for (int i = 1; i < n; i++) {
-            if (distanceMatrix[i][0] > 0 && dp[finalMask][i] != INT_MAX) {
-                if (dp[finalMask][i] + distanceMatrix[i][0] < minCost) {
-                    minCost = dp[finalMask][i] + distanceMatrix[i][0];
+            if (DistanceMatrix[i][0] > 0 && dp[finalMask][i] != INT_MAX) {
+                if (dp[finalMask][i] + DistanceMatrix[i][0] < minCost) {
+                    minCost = dp[finalMask][i] + DistanceMatrix[i][0];
                     lastNode = i;
                 }
             }
         }
 
         if (lastNode == -1) {
-            return tspNearestNeighbor(path);
+            return TravellingSalesmanNearestNeighbor(path);
         }
 
         // Reconstruir camino
@@ -155,7 +166,7 @@ private:
     }
 
     // TSP con heurística del vecino más cercano - O(n^2)
-    int tspNearestNeighbor(std::vector<int>& path) {
+    int TravellingSalesmanNearestNeighbor(std::vector<int>& path) {
         std::vector<bool> visited(n, false);
         path.clear();
         path.push_back(0);
@@ -168,8 +179,8 @@ private:
             int minDist = INT_MAX;
 
             for (int j = 0; j < n; j++) {
-                if (!visited[j] && distanceMatrix[current][j] > 0 && distanceMatrix[current][j] < minDist) {
-                    minDist = distanceMatrix[current][j];
+                if (!visited[j] && DistanceMatrix[current][j] > 0 && DistanceMatrix[current][j] < minDist) {
+                    minDist = DistanceMatrix[current][j];
                     next = j;
                 }
             }
@@ -183,8 +194,8 @@ private:
         }
 
         path.push_back(0); // Regresar al inicio
-        if (distanceMatrix[current][0] > 0) {
-            totalCost += distanceMatrix[current][0];
+        if (DistanceMatrix[current][0] > 0) {
+            totalCost += DistanceMatrix[current][0];
         }
 
         return totalCost;
@@ -192,10 +203,10 @@ private:
 
 public:
     // Lee la entrada del problema - O(n^2)
-    void readInput() {
+    void ReadInput() {
         std::cin >> n;
 
-        distanceMatrix.resize(n, std::vector<int>(n));
+        DistanceMatrix.resize(n, std::vector<int>(n));
         capacityMatrix.resize(n, std::vector<int>(n));
         parent.resize(n);
         rank_.resize(n);
@@ -203,7 +214,7 @@ public:
         // Leer matriz de distancias
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                std::cin >> distanceMatrix[i][j];
+                std::cin >> DistanceMatrix[i][j];
             }
         }
 
@@ -235,8 +246,8 @@ public:
         // Crear lista de aristas - O(n^2)
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
-                if (distanceMatrix[i][j] > 0) {
-                    edges.push_back({distanceMatrix[i][j], i, j});
+                if (DistanceMatrix[i][j] > 0) {
+                    edges.push_back({DistanceMatrix[i][j], i, j});
                 }
             }
         }
@@ -246,18 +257,19 @@ public:
 
         // Inicializar Union-Find - O(n)
         for (int i = 0; i < n; i++) {
-            makeSet(i);
+            MakeSet(i);
         }
 
         std::vector<std::pair<char, char>> mstEdges;
 
         // Construir MST - O(n^2 α(n))
         for (const Edge& e : edges) {
-            if (unionSets(e.u, e.v)) {
+            if (UnionSets(e.u, e.v)) {
                 char u = 'A' + e.u;
                 char v = 'A' + e.v;
                 mstEdges.push_back({u, v});
-                if (mstEdges.size() == n - 1) break;
+                if (mstEdges.size() == n - 1)
+                    break;
             }
         }
 
@@ -265,9 +277,9 @@ public:
     }
 
     // Resuelve el TSP usando el vecino más cercano - O(n^2)
-    std::vector<char> solveTSP() {
+    std::vector<char> SolveTravellingSalesman() {
         std::vector<int> path;
-        tspNearestNeighbor(path);
+        TravellingSalesmanNearestNeighbor(path);
 
         std::vector<char> result;
         for (int node : path) {
@@ -278,7 +290,7 @@ public:
     }
 
     // Calcula el flujo máximo con Ford-Fulkerson - O(E * max_flow) = O(n^2 * f)
-    int fordFulkerson() {
+    int FordFulkerson() {
         // Crear grafo residual
         std::vector<std::vector<int>> graph = capacityMatrix;
         std::vector<int> parent(n);
@@ -286,7 +298,7 @@ public:
         int source = 0, sink = n - 1;
 
         // Cada BFS cuesta O(n^2) y se ejecuta O(f) veces
-        while (bfs(graph, source, sink, parent)) {
+        while (BreadthFirstSearch(graph, source, sink, parent)) {
             int pathFlow = INT_MAX;
 
             // Encontrar capacidad mínima del camino - O(n)
@@ -309,12 +321,12 @@ public:
     }
 
     // Encuentra la central más cercana a un punto - O(n)
-    Point findClosestCentral(const Point& query) {
+    Point FindClosestCentral(const Point& query) {
         double minDistance = 1e9;
         Point closest;
 
         for (const Point& central : centrals) {
-            double dist = query.distance(central);
+            double dist = query.Distance(central);
             if (dist < minDistance) {
                 minDistance = dist;
                 closest = central;
@@ -327,28 +339,30 @@ public:
 
 int main() {
     NetworkOptimizer optimizer;
-    optimizer.readInput();
+    optimizer.ReadInput();
 
     // 1. Kruskal MST
     std::vector<std::pair<char, char>> mstEdges = optimizer.kruskalMST();
     std::cout << "1.\n";
     for (size_t i = 0; i < mstEdges.size(); i++) {
-        if (i > 0) std::cout << "\n";
+        if (i > 0)
+            std::cout << "\n";
         std::cout << "(" << mstEdges[i].first << ", " << mstEdges[i].second << ")";
     }
     std::cout << std::endl;
 
     // 2. TSP
-    std::vector<char> tspRoute = optimizer.solveTSP();
+    std::vector<char> tspRoute = optimizer.SolveTravellingSalesman();
     std::cout << "2.\n";
     for (size_t i = 0; i < tspRoute.size(); i++) {
-        if (i > 0) std::cout << " ";
+        if (i > 0)
+            std::cout << " ";
         std::cout << tspRoute[i];
     }
     std::cout << std::endl;
 
     // 3. Ford-Fulkerson
-    int maxFlow = optimizer.fordFulkerson();
+    int maxFlow = optimizer.FordFulkerson();
     std::cout << "3.\n" << maxFlow << std::endl;
 
     // 4. Central más cercana

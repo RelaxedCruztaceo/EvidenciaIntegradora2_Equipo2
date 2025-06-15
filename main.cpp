@@ -1,5 +1,5 @@
 /*
-Alan Sanmiguel Garay, Juan Diego Susunaga, Adrián Salazar Rodríguez y Manuel Alejandro Cruz
+Alan Sanmiguel Garay, Juan Diego Susunaga, Adrián Salazar Rodríguez & Manuel Alejandro Cruz
     15/06/2025
     Equipo 2 - Análisis y diseño de algoritmos avanzados (Gpo 602)
     Evidencia Integradora 2

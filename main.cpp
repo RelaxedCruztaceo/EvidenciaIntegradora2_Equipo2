@@ -13,14 +13,7 @@ Alan Sanmiguel Garay, Juan Diego Susunaga, Adrián Salazar Rodríguez & Manuel A
 #include <cmath>
 #include <string>
 #include <sstream>
-
-// Estructura para representar una arista con peso entre dos nodos
-struct Edge {
-    int weight, u, v;
-    bool operator<(const Edge& other) const {
-        return weight < other.weight;
-    }
-};
+#include <memory>
 
 // Estructura para representar un punto en 2D
 struct Point {
@@ -31,22 +24,39 @@ struct Point {
     }
 };
 
-class NetworkOptimizer {
-private:
+// Clase base para algoritmos de grafos
+class GraphAlgorithm {
+protected:
     int n;
-    std::vector<std::vector<int>> DistanceMatrix;
-    std::vector<std::vector<int>> capacityMatrix;
-    std::vector<Point> centrals;
-    std::vector<int> parent, rank_;
+    std::vector<std::vector<int>> distanceMatrix;
+
+public:
+    GraphAlgorithm(int nodes, const std::vector<std::vector<int>>& matrix)
+        : n(nodes), distanceMatrix(matrix) {}
+    virtual ~GraphAlgorithm() = default;
+};
+
+// Clase para manejar Union-Find (Disjoint Set Union)
+class UnionFind {
+private:
+    std::vector<int> parent, rank;
+
+public:
+    UnionFind(int size) {
+        parent.resize(size);
+        rank.resize(size);
+        for (int i = 0; i < size; ++i) {
+            MakeSet(i);
+        }
+    }
 
     void MakeSet(int v) {
         parent[v] = v;
-        rank_[v] = 0;
+        rank[v] = 0;
     }
 
     int FindSet(int v) {
-        if (v == parent[v])
-            return v;
+        if (v == parent[v]) return v;
         return parent[v] = FindSet(parent[v]);
     }
 
@@ -54,17 +64,185 @@ private:
         a = FindSet(a);
         b = FindSet(b);
         if (a != b) {
-            if (rank_[a] < rank_[b])
-                std::swap(a, b);
+            if (rank[a] < rank[b]) std::swap(a, b);
             parent[b] = a;
-            if (rank_[a] == rank_[b])
-                rank_[a]++;
+            if (rank[a] == rank[b]) rank[a]++;
             return true;
         }
         return false;
     }
+};
 
-    bool BreadthFirstSearch(std::vector<std::vector<int>>& graph, int s, int t, std::vector<int>& parent) {
+// Clase para Kruskal MST
+class KruskalMST : public GraphAlgorithm {
+private:
+    struct Edge {
+        int weight, u, v;
+        bool operator<(const Edge& other) const {
+            return weight < other.weight;
+        }
+    };
+
+public:
+    KruskalMST(int nodes, const std::vector<std::vector<int>>& matrix)
+        : GraphAlgorithm(nodes, matrix) {}
+
+    std::vector<std::pair<char, char>> FindMST() {
+        std::vector<Edge> edges;
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (distanceMatrix[i][j] > 0) {
+                    edges.push_back({distanceMatrix[i][j], i, j});
+                }
+            }
+        }
+
+        std::sort(edges.begin(), edges.end());
+        UnionFind uf(n);
+        std::vector<std::pair<char, char>> mstEdges;
+
+        for (const Edge& e : edges) {
+            if (uf.UnionSets(e.u, e.v)) {
+                mstEdges.push_back({'A' + e.u, 'A' + e.v});
+                if (mstEdges.size() == n - 1) break;
+            }
+        }
+
+        return mstEdges;
+    }
+};
+
+// Clase para TSP
+class TSPSolver : public GraphAlgorithm {
+private:
+    struct TSPResult {
+        std::vector<int> path;
+        int totalCost;
+    };
+
+    TSPResult SolveDynamicProgramming() {
+        std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, INT_MAX));
+        std::vector<std::vector<int>> parent(1 << n, std::vector<int>(n, -1));
+        dp[1][0] = 0;
+
+        for (int mask = 0; mask < (1 << n); mask++) {
+            for (int u = 0; u < n; u++) {
+                if (!(mask & (1 << u)) || dp[mask][u] == INT_MAX) continue;
+
+                for (int v = 0; v < n; v++) {
+                    if ((mask & (1 << v)) || distanceMatrix[u][v] == 0) continue;
+
+                    int newMask = mask | (1 << v);
+                    if (dp[newMask][v] > dp[mask][u] + distanceMatrix[u][v]) {
+                        dp[newMask][v] = dp[mask][u] + distanceMatrix[u][v];
+                        parent[newMask][v] = u;
+                    }
+                }
+            }
+        }
+
+        int finalMask = (1 << n) - 1;
+        int minCost = INT_MAX;
+        int lastNode = -1;
+
+        for (int i = 1; i < n; i++) {
+            if (distanceMatrix[i][0] > 0 && dp[finalMask][i] != INT_MAX) {
+                if (dp[finalMask][i] + distanceMatrix[i][0] < minCost) {
+                    minCost = dp[finalMask][i] + distanceMatrix[i][0];
+                    lastNode = i;
+                }
+            }
+        }
+
+        TSPResult result;
+        result.totalCost = minCost;
+
+        if (lastNode != -1) {
+            std::vector<int> path;
+            int mask = finalMask;
+            int curr = lastNode;
+
+            while (curr != -1) {
+                path.push_back(curr);
+                int prev = parent[mask][curr];
+                mask ^= (1 << curr);
+                curr = prev;
+            }
+
+            std::reverse(path.begin(), path.end());
+            path.push_back(0);
+            result.path = path;
+        }
+
+        return result;
+    }
+
+    TSPResult SolveNearestNeighbor() {
+        std::vector<bool> visited(n, false);
+        std::vector<int> path;
+        path.push_back(0);
+        visited[0] = true;
+        int totalCost = 0;
+        int current = 0;
+
+        for (int i = 0; i < n - 1; i++) {
+            int next = -1;
+            int minDist = INT_MAX;
+
+            for (int j = 0; j < n; j++) {
+                if (!visited[j] && distanceMatrix[current][j] > 0 &&
+                    distanceMatrix[current][j] < minDist) {
+                    minDist = distanceMatrix[current][j];
+                    next = j;
+                }
+            }
+
+            if (next != -1) {
+                path.push_back(next);
+                visited[next] = true;
+                totalCost += minDist;
+                current = next;
+            }
+        }
+
+        path.push_back(0);
+        if (distanceMatrix[current][0] > 0) {
+            totalCost += distanceMatrix[current][0];
+        }
+
+        return {path, totalCost};
+    }
+
+public:
+    TSPSolver(int nodes, const std::vector<std::vector<int>>& matrix)
+        : GraphAlgorithm(nodes, matrix) {}
+
+    std::vector<char> Solve() {
+        TSPResult result;
+        if (n > 15) {
+            result = SolveNearestNeighbor();
+        } else {
+            result = SolveDynamicProgramming();
+            if (result.path.empty()) {
+                result = SolveNearestNeighbor();
+            }
+        }
+
+        std::vector<char> charPath;
+        for (int node : result.path) {
+            charPath.push_back('A' + node);
+        }
+        return charPath;
+    }
+};
+
+// Clase para Ford-Fulkerson
+class MaxFlowSolver : public GraphAlgorithm {
+private:
+    std::vector<std::vector<int>> capacityMatrix;
+
+    bool BFS(const std::vector<std::vector<int>>& graph, int s, int t,
+             std::vector<int>& parent) {
         std::vector<bool> visited(n, false);
         std::queue<int> q;
         q.push(s);
@@ -90,221 +268,18 @@ private:
         return false;
     }
 
-    // Función auxiliar para inicializar la tabla DP
-    void InitializeDPTable(std::vector<std::vector<int>>& dp, std::vector<std::vector<int>>& parent) {
-        dp.resize(1 << n, std::vector<int>(n, INT_MAX));
-        parent.resize(1 << n, std::vector<int>(n, -1));
-        dp[1][0] = 0; // Comenzar en el nodo 0
-    }
-
-    // Función auxiliar para procesar cada máscara en el DP
-    void ProcessMask(int mask, std::vector<std::vector<int>>& dp, std::vector<std::vector<int>>& parent) {
-        for (int u = 0; u < n; u++) {
-            if (!(mask & (1 << u)) || dp[mask][u] == INT_MAX)
-                continue;
-
-            ProcessNode(mask, u, dp, parent);
-        }
-    }
-
-    // Función auxiliar para procesar cada nodo en una máscara
-    void ProcessNode(int mask, int u, std::vector<std::vector<int>>& dp, std::vector<std::vector<int>>& parent) {
-        for (int v = 0; v < n; v++) {
-            if ((mask & (1 << v)) || DistanceMatrix[u][v] == 0)
-                continue;
-
-            UpdateDPTable(mask, u, v, dp, parent);
-        }
-    }
-
-    // Función auxiliar para actualizar la tabla DP
-    void UpdateDPTable(int mask, int u, int v, std::vector<std::vector<int>>& dp, std::vector<std::vector<int>>& parent) {
-        int newMask = mask | (1 << v);
-        int newDistance = dp[mask][u] + DistanceMatrix[u][v];
-
-        if (newDistance < dp[newMask][v]) {
-            dp[newMask][v] = newDistance;
-            parent[newMask][v] = u;
-        }
-    }
-
-    // Función auxiliar para encontrar el costo mínimo y último nodo
-    std::pair<int, int> FindMinCostAndLastNode(const std::vector<std::vector<int>>& dp) {
-        int finalMask = (1 << n) - 1;
-        int minCost = INT_MAX;
-        int lastNode = -1;
-
-        for (int i = 1; i < n; i++) {
-            if (DistanceMatrix[i][0] > 0 && dp[finalMask][i] != INT_MAX) {
-                if (dp[finalMask][i] + DistanceMatrix[i][0] < minCost) {
-                    minCost = dp[finalMask][i] + DistanceMatrix[i][0];
-                    lastNode = i;
-                }
-            }
-        }
-
-        return {minCost, lastNode};
-    }
-
-    // Función auxiliar para reconstruir el camino
-    void ReconstructPath(int lastNode, const std::vector<std::vector<int>>& parent, std::vector<int>& path) {
-        std::vector<int> tempPath;
-        int mask = (1 << n) - 1;
-        int curr = lastNode;
-
-        while (curr != -1) {
-            tempPath.push_back(curr);
-            int prev = parent[mask][curr];
-            mask ^= (1 << curr);
-            curr = prev;
-        }
-
-        std::reverse(tempPath.begin(), tempPath.end());
-        tempPath.push_back(0); // Regresar al inicio
-        path = tempPath;
-    }
-
-    int TSPDynamicProgramming(std::vector<int>& path) {
-        if (n > 15) {
-            return TSPNearestNeighbor(path);
-        }
-
-        std::vector<std::vector<int>> dp, parentTable;
-        InitializeDPTable(dp, parentTable);
-
-        for (int mask = 0; mask < (1 << n); mask++) {
-            ProcessMask(mask, dp, parentTable);
-        }
-
-        auto [minCost, lastNode] = FindMinCostAndLastNode(dp);
-
-        if (lastNode == -1) {
-            return TSPNearestNeighbor(path);
-        }
-
-        ReconstructPath(lastNode, parentTable, path);
-        return minCost;
-    }
-
-    int TSPNearestNeighbor(std::vector<int>& path) {
-        std::vector<bool> visited(n, false);
-        path.clear();
-        path.push_back(0);
-        visited[0] = true;
-        int totalCost = 0;
-        int current = 0;
-
-        for (int i = 0; i < n - 1; i++) {
-            int next = -1;
-            int minDist = INT_MAX;
-
-            for (int j = 0; j < n; j++) {
-                if (!visited[j] && DistanceMatrix[current][j] > 0 && DistanceMatrix[current][j] < minDist) {
-                    minDist = DistanceMatrix[current][j];
-                    next = j;
-                }
-            }
-
-            if (next != -1) {
-                path.push_back(next);
-                visited[next] = true;
-                totalCost += minDist;
-                current = next;
-            }
-        }
-
-        path.push_back(0);
-        if (DistanceMatrix[current][0] > 0) {
-            totalCost += DistanceMatrix[current][0];
-        }
-
-        return totalCost;
-    }
-
 public:
-    void ReadInput() {
-        std::cin >> n;
+    MaxFlowSolver(int nodes, const std::vector<std::vector<int>>& distMatrix,
+                  const std::vector<std::vector<int>>& capMatrix)
+        : GraphAlgorithm(nodes, distMatrix), capacityMatrix(capMatrix) {}
 
-        DistanceMatrix.resize(n, std::vector<int>(n));
-        capacityMatrix.resize(n, std::vector<int>(n));
-        parent.resize(n);
-        rank_.resize(n);
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                std::cin >> DistanceMatrix[i][j];
-            }
-        }
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                std::cin >> capacityMatrix[i][j];
-            }
-        }
-
-        centrals.resize(n);
-        for (int i = 0; i < n; i++) {
-            std::string line;
-            std::cin >> line;
-            line = line.substr(1, line.length() - 2);
-            size_t comma = line.find(',');
-            int x = std::stoi(line.substr(0, comma));
-            int y = std::stoi(line.substr(comma + 1));
-            centrals[i] = Point(x, y);
-        }
-    }
-
-    std::vector<std::pair<char, char>> kruskalMST() {
-        std::vector<Edge> edges;
-
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                if (DistanceMatrix[i][j] > 0) {
-                    edges.push_back({DistanceMatrix[i][j], i, j});
-                }
-            }
-        }
-
-        std::sort(edges.begin(), edges.end());
-
-        for (int i = 0; i < n; i++) {
-            MakeSet(i);
-        }
-
-        std::vector<std::pair<char, char>> mstEdges;
-
-        for (const Edge& e : edges) {
-            if (UnionSets(e.u, e.v)) {
-                char u = 'A' + e.u;
-                char v = 'A' + e.v;
-                mstEdges.push_back({u, v});
-                if (mstEdges.size() == n - 1)
-                    break;
-            }
-        }
-
-        return mstEdges;
-    }
-
-    std::vector<char> SolveTravellingSalesman() {
-        std::vector<int> path;
-        TSPNearestNeighbor(path);
-
-        std::vector<char> result;
-        for (int node : path) {
-            result.push_back('A' + node);
-        }
-
-        return result;
-    }
-
-    int FordFulkerson() {
+    int CalculateMaxFlow() {
         std::vector<std::vector<int>> graph = capacityMatrix;
         std::vector<int> parent(n);
         int maxFlow = 0;
         int source = 0, sink = n - 1;
 
-        while (BreadthFirstSearch(graph, source, sink, parent)) {
+        while (BFS(graph, source, sink, parent)) {
             int pathFlow = INT_MAX;
 
             for (int v = sink; v != source; v = parent[v]) {
@@ -323,8 +298,17 @@ public:
 
         return maxFlow;
     }
+};
 
-    Point findClosestCentral(const Point& query) {
+// Clase para manejar centrales
+class CentralManager {
+private:
+    std::vector<Point> centrals;
+
+public:
+    CentralManager(const std::vector<Point>& points) : centrals(points) {}
+
+    Point FindClosestCentral(const Point& query) const {
         double minDistance = 1e9;
         Point closest;
 
@@ -340,32 +324,90 @@ public:
     }
 };
 
+// Clase principal que coordina todo
+class NetworkOptimizer {
+private:
+    int n;
+    std::vector<std::vector<int>> distanceMatrix;
+    std::vector<std::vector<int>> capacityMatrix;
+    std::vector<Point> centrals;
+
+public:
+    void ReadInput() {
+        std::cin >> n;
+
+        distanceMatrix.resize(n, std::vector<int>(n));
+        capacityMatrix.resize(n, std::vector<int>(n));
+        centrals.resize(n);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                std::cin >> distanceMatrix[i][j];
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                std::cin >> capacityMatrix[i][j];
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            std::string line;
+            std::cin >> line;
+            line = line.substr(1, line.length() - 2);
+            size_t comma = line.find(',');
+            int x = std::stoi(line.substr(0, comma));
+            int y = std::stoi(line.substr(comma + 1));
+            centrals[i] = Point(x, y);
+        }
+    }
+
+    std::vector<std::pair<char, char>> GetMST() {
+        KruskalMST mstSolver(n, distanceMatrix);
+        return mstSolver.FindMST();
+    }
+
+    std::vector<char> SolveTSP() {
+        TSPSolver tspSolver(n, distanceMatrix);
+        return tspSolver.Solve();
+    }
+
+    int CalculateMaxFlow() {
+        MaxFlowSolver flowSolver(n, distanceMatrix, capacityMatrix);
+        return flowSolver.CalculateMaxFlow();
+    }
+
+    Point FindClosestCentral(const Point& query) {
+        CentralManager centralMgr(centrals);
+        return centralMgr.FindClosestCentral(query);
+    }
+};
+
 int main() {
     NetworkOptimizer optimizer;
     optimizer.ReadInput();
 
     // 1. Kruskal MST
-    std::vector<std::pair<char, char>> mstEdges = optimizer.kruskalMST();
+    std::vector<std::pair<char, char>> mstEdges = optimizer.GetMST();
     std::cout << "1.\n";
     for (size_t i = 0; i < mstEdges.size(); i++) {
-        if (i > 0)
-            std::cout << "\n";
+        if (i > 0) std::cout << "\n";
         std::cout << "(" << mstEdges[i].first << ", " << mstEdges[i].second << ")";
     }
     std::cout << std::endl;
 
     // 2. TSP
-    std::vector<char> tspRoute = optimizer.SolveTravellingSalesman();
+    std::vector<char> tspRoute = optimizer.SolveTSP();
     std::cout << "2.\n";
     for (size_t i = 0; i < tspRoute.size(); i++) {
-        if (i > 0)
-            std::cout << " ";
+        if (i > 0) std::cout << " ";
         std::cout << tspRoute[i];
     }
     std::cout << std::endl;
 
     // 3. Ford-Fulkerson
-    int maxFlow = optimizer.FordFulkerson();
+    int maxFlow = optimizer.CalculateMaxFlow();
     std::cout << "3.\n" << maxFlow << std::endl;
 
     // 4. Central más cercana
@@ -377,7 +419,7 @@ int main() {
     query.x = std::stoi(queryLine.substr(0, comma));
     query.y = std::stoi(queryLine.substr(comma + 1));
 
-    Point closest = optimizer.findClosestCentral(query);
+    Point closest = optimizer.FindClosestCentral(query);
     std::cout << "4.\n(" << closest.x << ", " << closest.y << ")" << std::endl;
 
     return 0;

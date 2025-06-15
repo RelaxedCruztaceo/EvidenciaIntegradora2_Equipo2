@@ -56,7 +56,8 @@ public:
     }
 
     int FindSet(int v) {
-        if (v == parent[v]) return v;
+        if (v == parent[v])
+            return v;
         return parent[v] = FindSet(parent[v]);
     }
 
@@ -64,9 +65,11 @@ public:
         a = FindSet(a);
         b = FindSet(b);
         if (a != b) {
-            if (rank[a] < rank[b]) std::swap(a, b);
+            if (rank[a] < rank[b])
+                std::swap(a, b);
             parent[b] = a;
-            if (rank[a] == rank[b]) rank[a]++;
+            if (rank[a] == rank[b])
+                rank[a]++;
             return true;
         }
         return false;
@@ -104,7 +107,8 @@ public:
         for (const Edge& e : edges) {
             if (uf.UnionSets(e.u, e.v)) {
                 mstEdges.push_back({'A' + e.u, 'A' + e.v});
-                if (mstEdges.size() == n - 1) break;
+                if (mstEdges.size() == n - 1)
+                    break;
             }
         }
 
@@ -127,10 +131,12 @@ private:
 
         for (int mask = 0; mask < (1 << n); mask++) {
             for (int u = 0; u < n; u++) {
-                if (!(mask & (1 << u)) || dp[mask][u] == INT_MAX) continue;
+                if (!(mask & (1 << u)) || dp[mask][u] == INT_MAX)
+                    continue;
 
                 for (int v = 0; v < n; v++) {
-                    if ((mask & (1 << v)) || distanceMatrix[u][v] == 0) continue;
+                    if ((mask & (1 << v)) || distanceMatrix[u][v] == 0)
+                        continue;
 
                     int newMask = mask | (1 << v);
                     if (dp[newMask][v] > dp[mask][u] + distanceMatrix[u][v]) {
@@ -324,7 +330,7 @@ public:
     }
 };
 
-// Clase principal que coordina todo
+// Clase principal que coordina
 class NetworkOptimizer {
 private:
     int n;
@@ -392,7 +398,8 @@ int main() {
     std::vector<std::pair<char, char>> mstEdges = optimizer.GetMST();
     std::cout << "1.\n";
     for (size_t i = 0; i < mstEdges.size(); i++) {
-        if (i > 0) std::cout << "\n";
+        if (i > 0)
+            std::cout << "\n";
         std::cout << "(" << mstEdges[i].first << ", " << mstEdges[i].second << ")";
     }
     std::cout << std::endl;
@@ -401,7 +408,8 @@ int main() {
     std::vector<char> tspRoute = optimizer.SolveTSP();
     std::cout << "2.\n";
     for (size_t i = 0; i < tspRoute.size(); i++) {
-        if (i > 0) std::cout << " ";
+        if (i > 0)
+            std::cout << " ";
         std::cout << tspRoute[i];
     }
     std::cout << std::endl;
